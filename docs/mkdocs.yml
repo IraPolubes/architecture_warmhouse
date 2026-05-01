@@ -1,0 +1,11 @@
+site_name: Smart Home Architecture
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - Context: architecture/context.md
+      - Container: architecture/container.md
+      - Component: architecture/component.md
+      - Code: architecture/code.md
