@@ -16,7 +16,7 @@ LOCATION_TO_SENSOR_ID = {
 }
 
 @app.get("/temperature")
-def get_temperature(location: Optional[str] = "", sensorId: Optional[str] = ""):
+def get_temperature(location: str = "", sensorId: str = ""):
 
     if location == "":
         location = SENSOR_ID_TO_LOCATION.get(sensorId, "Unknown")
@@ -37,3 +37,7 @@ def get_temperature(location: Optional[str] = "", sensorId: Optional[str] = ""):
         "sensor_type": "temperature",
         "description": f"Random temperature for {location}"
     }
+
+@app.get("/temperature/{sensorId}")
+def get_temperature_by_sensor_id(sensorId: str):
+    return get_temperature(sensorId=sensorId)
