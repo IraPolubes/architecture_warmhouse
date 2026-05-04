@@ -6,7 +6,7 @@ Welcome to the architecture documentation for the Smart Home project.
 
 This documentation follows the C4 model for visualizing software architecture.
 
-- [Context](architecture/context.md)
-- [Container](architecture/container.md)
-- [Component](architecture/component.md)
-- [Code](architecture/code.md)
+- [Context](architecture/context.md) — система и её окружение
+- [Container](architecture/container.md) — контейнеры (приложения, БД)
+- [Component](architecture/component.md) — компоненты внутри Go-приложения
+- [Code](architecture/code.md) — структуры и классы кода

@@ -22,8 +22,8 @@ services:
 
   temperature-api:
     build: 
-      context: ./temperature-api
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/temperature-api/Dockerfile
     container_name: temperature-api
     ports:
       - "8081:8081"
