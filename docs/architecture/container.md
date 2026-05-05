@@ -8,20 +8,47 @@
 
 title C4 Container Diagram — Smart Home
 
-Person(user, "User", "Manages sensors through a web interface")
+title C4 Container Diagram - Smart Home System
 
-System_Boundary(smartHome, "Smart Home System") {
-    Container(goApp, "Smart Home API", "Go, Gin", "Handles REST API requests, business logic")
-    Container(tempApi, "Temperature API", "Python, Flask", "Returns temperature readings")
-    ContainerDb(db, "PostgreSQL", "PostgreSQL", "Stores sensors, users data")
+Person(user, "User")
+
+System_Boundary(smarthome, "Smart Home System") {
+
+    Container(webApp, "Web Application Frontend",  "React / TypeScript","Provides a web interface for controlling, monitoring configuring devices")
+
+    Container(api, "Smart Home API", "Backend API", "Entry point for the web application. Routes requests to backend services")
+
+    Container(authService, "User Management Service", "Backend Service", "Manages users authentication and registration data")
+
+    Container(controlService, "Device Control Service", "Backend Service", "Controls heating, lighting, and gates")
+
+    Container(deviceService, "Device registration and configuration", "Backend Service", "Registers new devices")
+
+    Container(monitoringService, "Device Monitoring Service", "Backend Service", "Provides telemetry for all devices")
+
+    ContainerDb(userDb, "User Database", "Relational Database", "Stores users, credentials, addresses, homes, and roles")
+
+    ContainerDb(deviceDb, "Device State and Commands Database", "Relational / Document Database", "Stores devices, device states, commands, and automation scenarios")
+
+    ContainerDb(telemetryDb, "Telemetry Database", "Time-Series Database", "Stores telemetry, measurements, and monitoring events")
 }
 
-System_Ext(sensor, "IoT Sensor", "External temperature sensor")
 
-Rel(user, goApp, "REST API calls", "HTTP/JSON")
-Rel(goApp, db, "Reads/Writes sensors", "SQL/pgx")
-Rel(goApp, tempApi, "Fetches temperature", "HTTP GET /temperature")
-Rel(sensor, tempApi, "Sends readings", "HTTP")
+
+Rel(user, webApp, "Uses", "HTTPS")
+Rel(webApp, api, "Sends requests to", "HTTPS / JSON")
+
+Rel(api, authService, "Uses")
+Rel(api, controlService, "Uses")
+Rel(api, deviceService, "Uses")
+Rel(api, monitoringService, "Uses")
+
+
+Rel(authService, userDb, "Reads from and writes to", "SQL")
+Rel(controlService, deviceDb, "Reads from and writes to", "SQL / NoSQL")
+Rel(deviceService, deviceDb, "Reads from and writes to", "SQL / NoSQL")
+Rel(monitoringService, telemetryDb, "Reads from and writes to", "Time-series queries")
+
 
 @enduml
 ```
