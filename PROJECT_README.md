@@ -147,21 +147,39 @@ Pages
   -> API Client
       -> Smart Home API
 
-[Диаграмма компонентов C4](component_device_control_service.md)
-[Диаграмма компонентов C4](component_device_monitoring_service.md)
-[Диаграмма компонентов C4](component_device_registration_configuration_service.md)
-[Диаграмма компонентов C4](component_smart_home_api.md)
-[Диаграмма компонентов C4](component_user_management_service.md)
-[Диаграмма компонентов C4](component_web_application_frontend.md)
+[Диаграмма компонентов device control C4](docs/architecture/component_device_control_service.md)
+[Диаграмма компонентов device monitoring C4](docs/architecture/component_device_monitoring_service.md)
+[Диаграмма компонентов device reg config C4](docs/architecture/component_device_registration_configuration_service.md)
+[Диаграмма компонентов smart_home_api C4](docs/architecture/component_smart_home_api.md)
+[Диаграмма компонентов user_management C4](docs/architecture/component_user_management_service.md)
+[Диаграмма компонентов web application C4](docs/architecture/component_web_application_frontend.md)
 
 
 **Диаграмма кода (Code)**
 
 Добавьте одну диаграмму или несколько.
 
+Разобъем на код компонент User Account Application Service
+Его сценарий:
+1. взять username/password
+2. проверить, существует ли пользователь
+3. если да — аутентифицировать токеном
+4. если нет — предложить создать аккаунт
+
+[Диаграмма кода C4](docs/architecture/code.md)
+
 # Задание 3. Разработка ER-диаграммы
+**Для превью Mermaid в VS Code** нужен плагин:
+
+**Markdown Preview Mermaid Support** (от Matt Bierner)
+
+После установки —  превью: `Ctrl+Shift+V`
+
+[ER Диаграмма](docs/er_diagram/er_diagram.md)
 
 Добавьте сюда ER-диаграмму. Она должна отражать ключевые сущности системы, их атрибуты и тип связей между ними.
+
+
 
 # Задание 4. Создание и документирование API
 

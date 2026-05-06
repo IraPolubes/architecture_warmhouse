@@ -1,106 +1,50 @@
 # C4 Code Diagram
 
-Структура кода Go-приложения Smart Home API (уровень классов/структур).
+Диаграмма кода компонента User Account Application Service 
 
 ```plantuml
 @startuml
 !include ../C4_templates/C4.puml
 
-title C4 Code Diagram — Smart Home API
+@startuml
 
-package "main" {
-    class main {
-        +main()
-        -getEnv(key, default) string
-    }
+title User Account Application Service - Code Diagram
+
+class UserAccountApplicationService {
+  +login(username: String, password: String): LoginResult
+  +register(username: String, password: String): User
 }
 
-package "handlers" {
-    class SensorHandler {
-        +DB : *db.DB
-        +TemperatureService : *services.TemperatureService
-        +RegisterRoutes(router)
-        +GetSensors(c)
-        +GetSensorByID(c)
-        +CreateSensor(c)
-        +UpdateSensor(c)
-        +DeleteSensor(c)
-        +UpdateSensorValue(c)
-        +GetTemperatureByLocation(c)
-    }
+class UserRepository {
+  +findByUsername(username: String): User
+  +save(user: User): void
 }
 
-package "services" {
-    class TemperatureService {
-        +BaseURL : string
-        +HTTPClient : *http.Client
-        +GetTemperature(location) : *TemperatureResponse
-        +GetTemperatureByID(sensorID) : *TemperatureResponse
-    }
-
-    class TemperatureResponse {
-        +Value : float64
-        +Unit : string
-        +Timestamp : time.Time
-        +Location : string
-        +Status : string
-        +SensorID : string
-        +Description : string
-    }
+class TokenService {
+  +issueToken(user: User): String
 }
 
-package "db" {
-    class DB {
-        +Pool : *pgxpool.Pool
-        +New(connString) : *DB
-        +Close()
-        +GetSensors(ctx) : []Sensor
-        +GetSensorByID(ctx, id) : Sensor
-        +CreateSensor(ctx, s) : Sensor
-        +UpdateSensor(ctx, id, s) : Sensor
-        +DeleteSensor(ctx, id)
-    }
+class PasswordVerifier {
+  +verify(rawPassword: String, passwordHash: String): boolean
 }
 
-package "models" {
-    class Sensor {
-        +ID : int
-        +Name : string
-        +Type : SensorType
-        +Location : string
-        +Value : float64
-        +Unit : string
-        +Status : string
-        +LastUpdated : time.Time
-        +CreatedAt : time.Time
-    }
-
-    class SensorCreate {
-        +Name : string
-        +Type : SensorType
-        +Location : string
-        +Unit : string
-    }
-
-    class SensorUpdate {
-        +Name : string
-        +Type : SensorType
-        +Location : string
-        +Value : *float64
-        +Unit : string
-        +Status : string
-    }
+class User {
+  +String id
+  +String username
+  +String passwordHash
 }
 
-main --> SensorHandler : creates
-main --> DB : creates
-main --> TemperatureService : creates
-SensorHandler --> DB : uses
-SensorHandler --> TemperatureService : uses
-DB --> Sensor : returns
-DB --> SensorCreate : accepts
-DB --> SensorUpdate : accepts
-TemperatureService --> TemperatureResponse : returns
+class LoginResult {
+  +boolean success
+  +String token
+  +String message
+}
+
+UserAccountApplicationService --> UserRepository : finds/saves users
+UserAccountApplicationService --> PasswordVerifier : verifies password
+UserAccountApplicationService --> TokenService : issues token
+UserRepository --> User : returns
+TokenService --> User : uses
+UserAccountApplicationService --> LoginResult : returns
 
 @enduml
-```

@@ -5,6 +5,11 @@ theme:
 markdown_extensions:
   - plantuml_markdown:
       server: http://www.plantuml.com/plantuml
+  - pymdownx.superfences:
+      custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
   - Home: index.md
