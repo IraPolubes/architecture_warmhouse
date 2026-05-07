@@ -1,0 +1,895 @@
+openapi: 3.0.3
+
+info:
+  title: Smart Home API
+  version: 1.0.0
+  description: REST API для управления умным домом — пользователи, устройства, управление и телеметрия
+
+servers:
+  - url: https://api.smarthome.io/api/v1
+    description: Production
+  - url: http://localhost:8080/api/v1
+    description: Local dev
+
+tags:
+  - name: Auth
+    description: Регистрация и аутентификация пользователей
+  - name: Homes
+    description: Управление домами
+  - name: Devices
+    description: Регистрация и управление устройствами
+  - name: Heating
+    description: Управление отоплением
+  - name: Lighting
+    description: Управление освещением
+  - name: Gates
+    description: Управление воротами
+  - name: Telemetry
+    description: Мониторинг и телеметрия устройств
+
+paths:
+
+  # ─── 1. Регистрация пользователя ────────────────────────────────────────
+  /users:
+    post:
+      tags: [Auth]
+      summary: Регистрация пользователя
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+            example:
+              email: "ivan@example.com"
+              password: "Secret123!"
+              full_name: "Иван Петров"
+              phone: "+79001234567"
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                user_id: "usr_01HX9K2M3N"
+                email: "ivan@example.com"
+                full_name: "Иван Петров"
+                created_at: "2025-05-07T10:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 2. Аутентификация ──────────────────────────────────────────────────
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Аутентификация пользователя
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "ivan@example.com"
+              password: "Secret123!"
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiIs..."
+                token_type: "Bearer"
+                expires_in: 3600
+                user_id: "usr_01HX9K2M3N"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 3. Регистрация дома ────────────────────────────────────────────────
+  /homes:
+    post:
+      tags: [Homes]
+      summary: Регистрация дома
+      operationId: registerHome
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeRegisterRequest'
+            example:
+              name: "Дача Подмосковье"
+              address: "Московская обл., Одинцово, ул. Лесная, 5"
+              timezone: "Europe/Moscow"
+      responses:
+        '201':
+          description: Дом зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeResponse'
+              example:
+                home_id: "home_03AZ7P1Q"
+                name: "Дача Подмосковье"
+                owner_id: "usr_01HX9K2M3N"
+                address: "Московская обл., Одинцово, ул. Лесная, 5"
+                timezone: "Europe/Moscow"
+                created_at: "2025-05-07T10:05:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 4. Регистрация устройства ──────────────────────────────────────────
+  /devices:
+    post:
+      tags: [Devices]
+      summary: Регистрация устройства
+      operationId: registerDevice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegisterRequest'
+            example:
+              home_id: "home_03AZ7P1Q"
+              device_type: "thermostat"
+              model: "SmartHeat Pro 2"
+              serial_number: "SH-2024-00442"
+              name: "Термостат гостиная"
+              room: "living_room"
+      responses:
+        '201':
+          description: Устройство зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+              example:
+                device_id: "dev_08BN2R4T"
+                home_id: "home_03AZ7P1Q"
+                device_type: "thermostat"
+                name: "Термостат гостиная"
+                room: "living_room"
+                status: "pending_activation"
+                created_at: "2025-05-07T10:10:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 5. Получение информации об устройстве ──────────────────────────────
+  # ─── 6. Удаление устройства ─────────────────────────────────────────────
+  /devices/{device_id}:
+    get:
+      tags: [Devices]
+      summary: Получить информацию об устройстве
+      operationId: getDevice
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Информация об устройстве
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+              example:
+                device_id: "dev_08BN2R4T"
+                home_id: "home_03AZ7P1Q"
+                device_type: "thermostat"
+                name: "Термостат гостиная"
+                room: "living_room"
+                model: "SmartHeat Pro 2"
+                status: "active"
+                created_at: "2025-05-07T10:10:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Devices]
+      summary: Удалить устройство
+      operationId: deleteDevice
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Устройство удалено
+          content:
+            application/json:
+              example:
+                device_id: "dev_08BN2R4T"
+                deleted: true
+                deleted_at: "2025-05-07T11:00:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 7. Программирование сценария ───────────────────────────────────────
+  /devices/{device_id}/scenario:
+    put:
+      tags: [Devices]
+      summary: Задать сценарий работы устройства
+      operationId: setDeviceScenario
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioRequest'
+            example:
+              scenario_name: "Ночной режим"
+              trigger:
+                type: "time"
+                cron: "0 23 * * *"
+              actions:
+                - device_id: "dev_08BN2R4T"
+                  command: "set_temperature"
+                  value: 18
+                - device_id: "dev_11CC3Q5U"
+                  command: "turn_off"
+      responses:
+        '200':
+          description: Сценарий сохранён
+          content:
+            application/json:
+              example:
+                scenario_id: "scn_77ZX9P"
+                scenario_name: "Ночной режим"
+                device_id: "dev_08BN2R4T"
+                status: "active"
+                created_at: "2025-05-07T10:20:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 8. Текущая температура ─────────────────────────────────────────────
+  /homes/{home_id}/heating/temperature:
+    get:
+      tags: [Heating]
+      summary: Текущая температура по всем комнатам дома
+      operationId: getTemperature
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HomeId'
+      responses:
+        '200':
+          description: Показания температуры
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureResponse'
+              example:
+                home_id: "home_03AZ7P1Q"
+                readings:
+                  - device_id: "dev_08BN2R4T"
+                    room: "living_room"
+                    current_temperature_c: 21.4
+                    target_temperature_c: 22.0
+                    measured_at: "2025-05-07T10:59:45Z"
+                  - device_id: "dev_09BN3R5T"
+                    room: "bedroom"
+                    current_temperature_c: 19.8
+                    target_temperature_c: 20.0
+                    measured_at: "2025-05-07T10:59:50Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 9. Управление светом ───────────────────────────────────────────────
+  /devices/{device_id}/lights:
+    patch:
+      tags: [Lighting]
+      summary: Включить или выключить свет
+      operationId: controlLight
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LightCommandRequest'
+            examples:
+              turn_on:
+                summary: Включить с яркостью
+                value:
+                  state: "on"
+                  brightness: 75
+                  color_temp_kelvin: 3000
+              turn_off:
+                summary: Выключить
+                value:
+                  state: "off"
+      responses:
+        '200':
+          description: Состояние обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LightStateResponse'
+              example:
+                device_id: "dev_11CC3Q5U"
+                state: "on"
+                brightness: 75
+                color_temp_kelvin: 3000
+                updated_at: "2025-05-07T11:01:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─── 10. Управление воротами ────────────────────────────────────────────
+  /devices/{device_id}/gates/command:
+    post:
+      tags: [Gates]
+      summary: Отправить команду воротам
+      operationId: sendGateCommand
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GateCommandRequest'
+            examples:
+              unlock:
+                summary: Открыть ворота
+                value:
+                  command: "unlock"
+                  initiated_by: "usr_01HX9K2M3N"
+              lock:
+                summary: Закрыть ворота
+                value:
+                  command: "lock"
+                  initiated_by: "usr_01HX9K2M3N"
+      responses:
+        '200':
+          description: Команда выполнена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateCommandResponse'
+              example:
+                device_id: "dev_15GG8W2Z"
+                command: "unlock"
+                status: "executed"
+                gate_state: "open"
+                executed_at: "2025-05-07T11:02:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # ─── 11. Телеметрия для дашборда ────────────────────────────────────────
+  /homes/{home_id}/telemetry:
+    get:
+      tags: [Telemetry]
+      summary: Получить телеметрию для дашборда за период
+      operationId: getTelemetry
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HomeId'
+        - name: from
+          in: query
+          required: true
+          description: Начало периода (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+          example: "2025-05-07T00:00:00Z"
+        - name: to
+          in: query
+          required: true
+          description: Конец периода (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+          example: "2025-05-07T12:00:00Z"
+        - name: device_ids
+          in: query
+          required: false
+          description: Фильтр по устройствам (через запятую)
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+          example: ["dev_08BN2R4T", "dev_09BN3R5T"]
+      responses:
+        '200':
+          description: Данные телеметрии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+              example:
+                home_id: "home_03AZ7P1Q"
+                period:
+                  from: "2025-05-07T00:00:00Z"
+                  to: "2025-05-07T12:00:00Z"
+                devices:
+                  - device_id: "dev_08BN2R4T"
+                    device_type: "thermostat"
+                    room: "living_room"
+                    metrics:
+                      - timestamp: "2025-05-07T11:00:00Z"
+                        temperature_c: 21.4
+                        humidity_pct: 52
+                        battery_pct: 87
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+# ─── Компоненты ─────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    DeviceId:
+      name: device_id
+      in: path
+      required: true
+      description: Идентификатор устройства
+      schema:
+        type: string
+      example: "dev_08BN2R4T"
+
+    HomeId:
+      name: home_id
+      in: path
+      required: true
+      description: Идентификатор дома
+      schema:
+        type: string
+      example: "home_03AZ7P1Q"
+
+  schemas:
+
+    UserRegisterRequest:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        full_name:
+          type: string
+        phone:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        email:
+          type: string
+        full_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        user_id:
+          type: string
+
+    HomeRegisterRequest:
+      type: object
+      required: [name, address, timezone]
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+
+    HomeResponse:
+      type: object
+      properties:
+        home_id:
+          type: string
+        name:
+          type: string
+        owner_id:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    DeviceRegisterRequest:
+      type: object
+      required: [home_id, device_type, serial_number, name, room]
+      properties:
+        home_id:
+          type: string
+        device_type:
+          type: string
+          enum: [thermostat, light, gate, camera, sensor]
+        model:
+          type: string
+        serial_number:
+          type: string
+        name:
+          type: string
+        room:
+          type: string
+
+    DeviceResponse:
+      type: object
+      properties:
+        device_id:
+          type: string
+        home_id:
+          type: string
+        device_type:
+          type: string
+        name:
+          type: string
+        room:
+          type: string
+        model:
+          type: string
+        status:
+          type: string
+          enum: [pending_activation, active, offline, error]
+        created_at:
+          type: string
+          format: date-time
+
+    ScenarioRequest:
+      type: object
+      required: [scenario_name, trigger, actions]
+      properties:
+        scenario_name:
+          type: string
+        trigger:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [time, event, manual]
+            cron:
+              type: string
+              description: Cron-выражение (для type=time)
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              device_id:
+                type: string
+              command:
+                type: string
+              value:
+                description: Значение для команды (если требуется)
+
+    LightCommandRequest:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [on, off]
+        brightness:
+          type: integer
+          minimum: 0
+          maximum: 100
+        color_temp_kelvin:
+          type: integer
+          minimum: 2700
+          maximum: 6500
+
+    LightStateResponse:
+      type: object
+      properties:
+        device_id:
+          type: string
+        state:
+          type: string
+          enum: [on, off]
+        brightness:
+          type: integer
+        color_temp_kelvin:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    GateCommandRequest:
+      type: object
+      required: [command, initiated_by]
+      properties:
+        command:
+          type: string
+          enum: [lock, unlock]
+        initiated_by:
+          type: string
+
+    GateCommandResponse:
+      type: object
+      properties:
+        device_id:
+          type: string
+        command:
+          type: string
+        status:
+          type: string
+        gate_state:
+          type: string
+          enum: [open, closed]
+        executed_at:
+          type: string
+          format: date-time
+
+    TemperatureResponse:
+      type: object
+      properties:
+        home_id:
+          type: string
+        readings:
+          type: array
+          items:
+            type: object
+            properties:
+              device_id:
+                type: string
+              room:
+                type: string
+              current_temperature_c:
+                type: number
+              target_temperature_c:
+                type: number
+              measured_at:
+                type: string
+                format: date-time
+
+    TelemetryResponse:
+      type: object
+      properties:
+        home_id:
+          type: string
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+        devices:
+          type: array
+          items:
+            type: object
+            properties:
+              device_id:
+                type: string
+              device_type:
+                type: string
+              room:
+                type: string
+              metrics:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp:
+                      type: string
+                      format: date-time
+                    temperature_c:
+                      type: number
+                    humidity_pct:
+                      type: integer
+                    battery_pct:
+                      type: integer
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Невалидные данные запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "VALIDATION_ERROR"
+            message: "Поле device_type обязательно"
+
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "UNAUTHORIZED"
+            message: "Токен отсутствует или недействителен"
+
+    Forbidden:
+      description: Доступ запрещён
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "FORBIDDEN"
+            message: "Недостаточно прав для выполнения операции"
+
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "NOT_FOUND"
+            message: "Устройство не найдено"
+
+    Conflict:
+      description: Конфликт состояния
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "CONFLICT"
+            message: "Устройство уже зарегистрировано"
+
+    UnprocessableEntity:
+      description: Семантически некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "UNPROCESSABLE"
+            message: "Команда set_temperature не поддерживается для устройства типа light"
+
+    TooManyRequests:
+      description: Превышен лимит запросов
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "RATE_LIMIT_EXCEEDED"
+            message: "Слишком много попыток входа. Повторите через 60 секунд"
+
+    ServiceUnavailable:
+      description: Устройство недоступно
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "DEVICE_UNAVAILABLE"
+            message: "Устройство не отвечает"
+
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INTERNAL_ERROR"
+            message: "Внутренняя ошибка сервера"
