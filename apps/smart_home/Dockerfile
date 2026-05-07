@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o smarthome
 # Runtime stage
 FROM alpine:latest
 
-# Install necessary runtime dependencies
+# Install necessary runtime dependencies 
 RUN apk --no-cache add ca-certificates tzdata
 
 # Set working directory

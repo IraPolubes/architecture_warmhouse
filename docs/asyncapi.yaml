@@ -1,0 +1,269 @@
+asyncapi: 2.6.0
+
+info:
+  title: Smart Home Telemetry — Async API
+  version: 1.0.0
+  description: |
+    Асинхронный канал телеметрии системы умного дома.
+    Покрывает два потока:
+    - Сценарий 12: IoT-устройство публикует телеметрию в MQTT-брокер
+    - Сценарий 13: Веб-дашборд получает живые обновления через WebSocket/SSE
+
+servers:
+
+  mqtt-broker:
+    url: mqtt://mqtt.smarthome.io:1883
+    protocol: mqtt
+    description: MQTT-брокер (Mosquitto). Принимает телеметрию от IoT-устройств.
+    security:
+      - deviceApiKey: []
+
+  websocket:
+    url: wss://api.smarthome.io/ws
+    protocol: ws
+    description: WebSocket-сервер. Рассылает живые обновления веб-дашборду.
+    security:
+      - userJwt: []
+
+# ─── Каналы ─────────────────────────────────────────────────────────────────
+channels:
+
+  # ── Сценарий 12: устройство → брокер ──────────────────────────────────────
+  homes/{home_id}/devices/{device_id}/telemetry:
+    description: |
+      IoT-устройство публикует показания в этот топик.
+      Device Monitoring Service подписан и консьюмит сообщения.
+    parameters:
+      home_id:
+        description: Идентификатор дома
+        schema:
+          type: string
+          example: "home_03AZ7P1Q"
+      device_id:
+        description: Идентификатор устройства
+        schema:
+          type: string
+          example: "dev_08BN2R4T"
+    publish:
+      summary: IoT-устройство отправляет показания телеметрии
+      operationId: publishDeviceTelemetry
+      message:
+        $ref: '#/components/messages/DeviceTelemetryMessage'
+
+  # ── Сценарий 13: сервис → дашборд ─────────────────────────────────────────
+  homes/{home_id}/dashboard/live:
+    description: |
+      Device Monitoring Service публикует агрегированные обновления.
+      Веб-дашборд подписывается и получает данные в реальном времени.
+    parameters:
+      home_id:
+        description: Идентификатор дома
+        schema:
+          type: string
+          example: "home_03AZ7P1Q"
+    subscribe:
+      summary: Дашборд получает живые обновления телеметрии
+      operationId: subscribeDashboardUpdates
+      message:
+        $ref: '#/components/messages/DashboardUpdateMessage'
+
+# ─── Компоненты ─────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    deviceApiKey:
+      type: apiKey
+      in: user
+      description: API-ключ устройства для аутентификации на MQTT-брокере
+    userJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-токен пользователя для WebSocket-соединения
+
+  messages:
+
+    # ── Сообщение от устройства ──────────────────────────────────────────────
+    DeviceTelemetryMessage:
+      name: DeviceTelemetry
+      title: Телеметрия от IoT-устройства
+      summary: Показания датчиков, отправляемые устройством в MQTT-брокер
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DeviceTelemetryPayload'
+      examples:
+        - name: Термостат — штатные показания
+          summary: Термостат в гостиной передаёт температуру и влажность
+          payload:
+            device_id: "dev_08BN2R4T"
+            home_id: "home_03AZ7P1Q"
+            timestamp: "2025-05-07T11:00:00Z"
+            metrics:
+              temperature_c: 21.4
+              humidity_pct: 52
+              battery_pct: 87
+              signal_rssi: -68
+
+        - name: Датчик ворот — смена состояния
+          summary: Датчик ворот сообщает об открытии
+          payload:
+            device_id: "dev_15GG8W2Z"
+            home_id: "home_03AZ7P1Q"
+            timestamp: "2025-05-07T11:05:00Z"
+            metrics:
+              gate_state: "open"
+              battery_pct: 94
+              signal_rssi: -55
+
+        - name: Лампочка — низкий заряд
+          summary: Умная лампочка сигнализирует о низком заряде
+          payload:
+            device_id: "dev_11CC3Q5U"
+            home_id: "home_03AZ7P1Q"
+            timestamp: "2025-05-07T11:10:00Z"
+            metrics:
+              light_state: "on"
+              brightness: 60
+              battery_pct: 8
+              signal_rssi: -72
+
+    # ── Сообщение на дашборд ─────────────────────────────────────────────────
+    DashboardUpdateMessage:
+      name: DashboardUpdate
+      title: Живое обновление для дашборда
+      summary: Агрегированные данные по дому, которые Device Monitoring Service пушит на веб-дашборд
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DashboardUpdatePayload'
+      examples:
+        - name: Обновление по двум устройствам
+          summary: Дашборд получает актуальное состояние термостата и ворот
+          payload:
+            home_id: "home_03AZ7P1Q"
+            updated_at: "2025-05-07T11:00:05Z"
+            devices:
+              - device_id: "dev_08BN2R4T"
+                device_type: "thermostat"
+                room: "living_room"
+                status: "active"
+                metrics:
+                  temperature_c: 21.4
+                  humidity_pct: 52
+                  battery_pct: 87
+              - device_id: "dev_15GG8W2Z"
+                device_type: "gate"
+                room: "entrance"
+                status: "active"
+                metrics:
+                  gate_state: "open"
+                  battery_pct: 94
+
+        - name: Предупреждение о низком заряде
+          summary: Дашборд получает алерт по устройству с низким зарядом
+          payload:
+            home_id: "home_03AZ7P1Q"
+            updated_at: "2025-05-07T11:10:05Z"
+            devices:
+              - device_id: "dev_11CC3Q5U"
+                device_type: "light"
+                room: "kitchen"
+                status: "active"
+                alerts:
+                  - type: "low_battery"
+                    severity: "warning"
+                    message: "Заряд батареи 8%. Рекомендуется замена."
+                metrics:
+                  light_state: "on"
+                  brightness: 60
+                  battery_pct: 8
+
+  schemas:
+
+    DeviceTelemetryPayload:
+      type: object
+      required: [device_id, home_id, timestamp, metrics]
+      properties:
+        device_id:
+          type: string
+          description: Идентификатор устройства
+        home_id:
+          type: string
+          description: Идентификатор дома
+        timestamp:
+          type: string
+          format: date-time
+          description: Время снятия показаний (UTC)
+        metrics:
+          type: object
+          description: Показания датчиков — набор полей зависит от типа устройства
+          properties:
+            temperature_c:
+              type: number
+              description: Температура в градусах Цельсия (термостат)
+            humidity_pct:
+              type: integer
+              description: Влажность в процентах (термостат)
+            gate_state:
+              type: string
+              enum: [open, closed]
+              description: Состояние ворот
+            light_state:
+              type: string
+              enum: [on, off]
+              description: Состояние лампочки
+            brightness:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Яркость в процентах
+            battery_pct:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Заряд батареи в процентах
+            signal_rssi:
+              type: integer
+              description: Уровень сигнала Wi-Fi в dBm
+
+    DashboardUpdatePayload:
+      type: object
+      required: [home_id, updated_at, devices]
+      properties:
+        home_id:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+          description: Время формирования обновления (UTC)
+        devices:
+          type: array
+          items:
+            type: object
+            properties:
+              device_id:
+                type: string
+              device_type:
+                type: string
+                enum: [thermostat, light, gate, camera, sensor]
+              room:
+                type: string
+              status:
+                type: string
+                enum: [active, offline, error]
+              metrics:
+                type: object
+                description: Актуальные показания устройства
+              alerts:
+                type: array
+                description: Алерты по устройству (опционально)
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [low_battery, offline, sensor_error]
+                    severity:
+                      type: string
+                      enum: [info, warning, critical]
+                    message:
+                      type: string
