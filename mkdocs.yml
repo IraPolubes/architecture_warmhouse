@@ -4,15 +4,25 @@ theme:
 
 markdown_extensions:
   - plantuml_markdown:
-      server: http://www.plantuml.com/plantuml
+      #server: http://www.plantuml.com/plantuml
+      plantuml_cmd: plantuml
+      base_dir: docs
+      #base_dir: docs/architecture
 
 nav:
   - Home: index.md
   - Architecture:
       - Context: architecture/context.md
       - Container: architecture/container.md
-      - Component: architecture/component.md
+      - Component overview: architecture/component.md
+      - Components:
+          - Smart Home API: architecture/component_smart_home_api.md
+          - Device Monitoring Service: architecture/component_device_monitoring_service.md
+          - Device Control Service: architecture/component_device_control_service.md
+          - Device Registration Configuration Service: architecture/component_device_registration_configuration_service.md
+          - User Management Service: architecture/component_user_management_service.md
+          - Web Application Frontend: architecture/component_web_application_frontend.md
       - Code: architecture/code.md
   - ER diagram:
       - ER diagram: er_diagram/er_diagram.md
-      
+

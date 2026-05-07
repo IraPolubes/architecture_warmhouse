@@ -1,6 +1,9 @@
-@startuml
-!include ../C4_templates/C4_Container.puml
 
+
+```plantuml
+@startuml
+
+!include <C4/C4_Component>
 title C4 Container Diagram — Smart Home System
 
 Person(user, "User")
@@ -55,3 +58,4 @@ Rel(iotDevice, messageBroker, "Publishes telemetry", "MQTT")
 Rel(messageBroker, monitoringService, "Delivers messages", "MQTT subscribe")
 
 @enduml
+```

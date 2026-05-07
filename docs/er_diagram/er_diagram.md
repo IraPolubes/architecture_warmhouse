@@ -1,3 +1,5 @@
+```plantuml
+
 @startuml
 
 title ER Diagram — Smart Home
@@ -59,3 +61,5 @@ device_type ||--o{ device : classifies
 device ||--o{ telemetry_data : generates
 
 @enduml
+
+```

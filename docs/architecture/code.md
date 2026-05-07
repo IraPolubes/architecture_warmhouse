@@ -1,12 +1,11 @@
 # C4 Code Diagram
 
-Диаграмма кода компонента User Account Application Service 
+Диаграмма кода компонента User Account Application Service
 
 ```plantuml
 @startuml
-!include ../C4_templates/C4.puml
+!include <C4/C4_Component>
 
-@startuml
 
 title User Account Application Service - Code Diagram
 
@@ -48,3 +47,4 @@ TokenService --> User : uses
 UserAccountApplicationService --> LoginResult : returns
 
 @enduml
+```

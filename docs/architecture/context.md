@@ -4,7 +4,7 @@
 
 ```plantuml
 @startuml
-!include ../C4_templates/C4_Context.puml
+!include <C4/C4_Component>
 
 title C4 Context Diagram — Smart Home
 
